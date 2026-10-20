@@ -248,6 +248,8 @@ pub(super) struct Run {
     pub xp: f32,
     pub hp: f32,
     pub abilities: Vec<Owned>,
+    /// Legendary evolution chosen during this run.
+    pub elemental_storm: bool,
     pub passives: Vec<(&'static PassiveDef, u8)>,
     pub shield: f32,
     pub shield_t: f32,
@@ -284,6 +286,7 @@ impl Default for Run {
             xp: 0.0,
             hp: BASE_HP,
             abilities: Vec::new(),
+            elemental_storm: false,
             passives: Vec::new(),
             shield: 0.0,
             shield_t: 0.0,
