@@ -9,6 +9,7 @@ mod auto;
 mod cards;
 mod data;
 mod enemies;
+mod evolutions;
 mod grade;
 mod hero;
 mod hud;
