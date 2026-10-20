@@ -13,6 +13,7 @@ use bevy::window::PrimaryWindow;
 
 use super::data::{self, AbilityDef, Effect, Kind, PassiveDef, Stat};
 use super::hero::{self, Hero};
+use super::evolutions;
 use super::minimap::{self, MiniMap};
 use super::{Owned, Phase, Rng, Run, Selection, Stats};
 
@@ -172,6 +173,7 @@ pub(super) struct BaseColor(Color);
 
 #[derive(Clone, Copy)]
 pub(super) enum Choice {
+    ElementalStorm,
     NewAbility(&'static AbilityDef),
     Upgrade(usize),
     NewPassive(&'static PassiveDef),
@@ -928,6 +930,12 @@ pub(super) fn start_run(run: &mut Run, selection: &mut Selection) -> bool {
 
 fn choices_for(run: &Run, rng: &mut Rng) -> Vec<Choice> {
     let mut pool: Vec<(Choice, f32)> = Vec::new();
+    if run.class.id == 7 && !run.elemental_storm {
+        let ranks: Vec<(&str, u8)> = run.abilities.iter().map(|o| (o.def.key, o.level)).collect();
+        if evolutions::is_unlocked(&evolutions::SHAMAN_EVOLUTIONS[0], &ranks) {
+            pool.push((Choice::ElementalStorm, 4.0));
+        }
+    }
     for (i, o) in run.abilities.iter().enumerate() {
         if o.level < data::MAX_ABILITY_LEVEL {
             pool.push((Choice::Upgrade(i), 1.2));
@@ -987,6 +995,10 @@ pub(super) fn pick(
         return;
     };
     match choice {
+        Choice::ElementalStorm => {
+            run.elemental_storm = true;
+            run.banner = Some(("ELEMENTAL STORM UNLOCKED".into(), 4.0));
+        }
         Choice::NewAbility(def) => run.abilities.push(Owned {
             def,
             level: 1,
@@ -1120,6 +1132,14 @@ pub(super) fn describe_card(
 ) -> CardText {
     let new = Color::srgb(0.3, 1.0, 0.3);
     match choice {
+        Choice::ElementalStorm => CardText {
+            spell: 421,
+            name: "Elemental Storm".into(),
+            tag: "Legendary evolution".into(),
+            tag_color: Color::srgb(1.0, 0.502, 0.0),
+            desc: "Requires Lightning Bolt III + Chain Lightning III.\nUnlocks the Elemental Storm evolution (combat effect coming next).".into(),
+            ranks: None,
+        },
         Choice::NewAbility(def) => {
             let stats = run.stats();
             let c = cast_at(def, 1, &stats);
