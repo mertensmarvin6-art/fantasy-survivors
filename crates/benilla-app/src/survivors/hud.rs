@@ -1665,7 +1665,7 @@ impl TipLine {
     }
 }
 
-/// A number as the tooltips print it: whole when near enough, else to one decimal.
+// A number as the tooltips print it: whole when near enough, else to one decimal.
 
 /// The results screen's tiles and its line under the title.
 #[allow(clippy::type_complexity)]
