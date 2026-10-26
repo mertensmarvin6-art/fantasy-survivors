@@ -38,6 +38,12 @@ minutes. **No server, no login, no account** — fully offline and self-containe
   genders, every class the race can be, and **sixteen zones**, from the starting zones to
   Naxxramas and the Gates of Ahn'Qiraj. Each zone fights with its own creatures and bosses, taken
   from the zone's real spawns. Your pick is remembered across reloads.
+- **Death Knight (DK)** as a tenth class, using Classic warrior appearances and a two-handed
+  sword. Starts with Death Coil; level-up cards add Frost Strike, Death and Decay, Blood Aura,
+  Icy Touch and Death Strike. Blood Aura and Death Strike heal from damage dealt. At level 5,
+  **F** activates Death's Advance. This is a Survivors adaptation: attacks cast on cooldown,
+  without runes, runic power or a ghoul. Existing Classic icons and effects stand in for Wrath
+  assets (including Rain of Fire for Death and Decay); card names remain DK-specific.
 - **Level-up cards** that deal in, tilt toward the cursor and lift on hover. Their WoW item-quality
   colour says how strong a pick is, and each card lists exactly what changes, like
   `Damage 20 » 26` or `Targets 2 » 3`.

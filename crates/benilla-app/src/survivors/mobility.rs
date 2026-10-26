@@ -42,6 +42,17 @@ pub(super) fn for_class(class: u8) -> Option<&'static Mobility> {
 
 static MOBILITY: &[(u8, Mobility)] = &[
     (
+        6,
+        Mobility {
+            spell: 1044,
+            name: "Death's Advance",
+            kind: Move::Haste(1.6),
+            cooldown: 16.0,
+            secs: 5.0,
+            desc: "March through the horde: run 60% faster for 5 sec.",
+        },
+    ),
+    (
         1,
         Mobility {
             spell: 100,

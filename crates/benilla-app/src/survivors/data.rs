@@ -76,6 +76,8 @@ pub(crate) enum Effect {
 pub(crate) struct AbilityDef {
     pub key: &'static str,
     pub spell: u32,
+    /// Custom card name when the Classic spell supplies only the art.
+    pub name: Option<&'static str>,
     pub kind: Kind,
     /// Direct damage; per tick for areas and pulses; absorb, heal or reflect for the self kinds.
     pub damage: f32,
@@ -101,6 +103,7 @@ const fn ab(key: &'static str, spell: u32, kind: Kind) -> AbilityDef {
     AbilityDef {
         key,
         spell,
+        name: None,
         kind,
         damage: 0.0,
         dot: 0.0,
@@ -123,6 +126,75 @@ macro_rules! ability {
 }
 
 pub(crate) static ABILITIES: &[AbilityDef] = &[
+    // DK mechanics use existing Classic spell visuals; no Wrath data is required.
+    ability!(
+        "dk_death_coil",
+        6789,
+        Bolt {
+            name: Some("Death Coil"),
+            damage: 18.0,
+            cooldown: 1.8,
+            range: 24.0
+        }
+    ),
+    ability!(
+        "dk_frost_strike",
+        8056,
+        Melee {
+            name: Some("Frost Strike"),
+            damage: 24.0,
+            cooldown: 1.6,
+            range: 5.0,
+            effect: Effect::Slow(0.6, 2.5),
+            mark: 8056
+        }
+    ),
+    ability!(
+        "dk_death_and_decay",
+        5740,
+        Ground {
+            name: Some("Death and Decay"),
+            damage: 8.0,
+            cooldown: 10.0,
+            range: 20.0,
+            radius: 7.0,
+            duration: 6.0
+        }
+    ),
+    ability!(
+        "dk_blood_aura",
+        1949,
+        Aura {
+            name: Some("Blood Aura"),
+            damage: 5.0,
+            cooldown: 2.5,
+            radius: 6.0,
+            effect: Effect::Drain(0.15)
+        }
+    ),
+    ability!(
+        "dk_icy_touch",
+        116,
+        Bolt {
+            name: Some("Icy Touch"),
+            damage: 10.0,
+            cooldown: 2.6,
+            range: 22.0,
+            effect: Effect::Slow(0.5, 3.0),
+            mark: 116
+        }
+    ),
+    ability!(
+        "dk_death_strike",
+        78,
+        Melee {
+            name: Some("Death Strike"),
+            damage: 26.0,
+            cooldown: 4.0,
+            range: 5.0,
+            effect: Effect::Drain(0.25)
+        }
+    ),
     // --- Mage ---
     ability!(
         "frostbolt",
@@ -1197,6 +1269,30 @@ pub(crate) static CLASSES: &[ClassDef] = &[
         weapons: &[(0, 22391, 2, 10, 2, 17, 2)],
         sheath: 1,
     },
+    ClassDef {
+        id: 6,
+        name: "Death Knight",
+        color: 0xC41E3A,
+        // Classic has no runic-power display; abilities cast on cooldown as for other classes.
+        power: 0,
+        start: "dk_death_coil",
+        pool: &[
+            "dk_death_coil",
+            "dk_frost_strike",
+            "dk_death_and_decay",
+            "dk_blood_aura",
+            "dk_icy_touch",
+            "dk_death_strike",
+        ],
+        // Reuse the warrior trainers' armoured looks and race/sex coverage.
+        looks: &[
+            1300, 1374, 1375, 1504, 1578, 1599, 1707, 1721, 1880, 2096, 2103, 2113, 2196, 2198,
+            2614, 2620, 2658, 3053, 3054, 3055, 3280, 3287, 3343, 3399, 3431, 3743, 3793, 3794,
+            4242, 4556, 6071, 11037,
+        ],
+        weapons: &[(0, 7483, 2, 8, 1, 17, 3)],
+        sheath: 1,
+    },
 ];
 
 #[derive(Clone, Copy)]
@@ -2017,4 +2113,42 @@ fn ladder(foes: &[Foe], tuned: &[EnemyDef]) -> Vec<EnemyDef> {
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn class_pools_resolve_and_saved_class_indices_stay_stable() {
+        let ids: Vec<_> = CLASSES.iter().map(|c| c.id).collect();
+        assert_eq!(ids, [1, 2, 3, 4, 5, 7, 8, 9, 11, 6]);
+        for class in CLASSES {
+            assert!(class.pool.contains(&class.start));
+            assert!(!class.looks.is_empty());
+            for key in class.pool {
+                assert_eq!(ability(key).key, *key);
+            }
+        }
+        let mut keys: Vec<_> = ABILITIES.iter().map(|a| a.key).collect();
+        keys.sort_unstable();
+        keys.dedup();
+        assert_eq!(keys.len(), ABILITIES.len());
+    }
+
+    #[test]
+    fn dk_has_six_distinct_named_cards_and_blood_sustain() {
+        let dk = CLASSES.iter().find(|c| c.id == 6).unwrap();
+        assert_eq!(dk.pool.len(), MAX_ABILITIES);
+        for key in dk.pool {
+            let a = ability(key);
+            assert!(a.name.is_some());
+            assert!(a.damage > 0.0 && a.cooldown > 0.0);
+        }
+        assert_eq!(ability("dk_frost_strike").kind, Kind::Melee);
+        assert_eq!(ability("dk_death_and_decay").kind, Kind::Ground);
+        assert_eq!(ability("dk_blood_aura").effect, Effect::Drain(0.15));
+        assert_eq!(ability("dk_death_strike").effect, Effect::Drain(0.25));
+        assert_eq!(dk.looks, CLASSES[0].looks);
+    }
 }

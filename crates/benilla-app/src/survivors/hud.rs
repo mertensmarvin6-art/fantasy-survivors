@@ -279,6 +279,12 @@ fn spell_name(spells: Option<&crate::ui_action::Spells>, spell: u32, fallback: &
         .unwrap_or_else(|| fallback.replace('_', " "))
 }
 
+fn ability_name(spells: Option<&crate::ui_action::Spells>, def: &AbilityDef) -> String {
+    def.name
+        .map(str::to_owned)
+        .unwrap_or_else(|| spell_name(spells, def.spell, def.key))
+}
+
 pub(super) fn setup_hud(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -1125,7 +1131,7 @@ pub(super) fn describe_card(
             let c = cast_at(def, 1, &stats);
             CardText {
                 spell: def.spell,
-                name: spell_name(spells, def.spell, def.key),
+                name: ability_name(spells, def),
                 tag: "New spell".into(),
                 tag_color: new,
                 desc: format!("{}.", ability_body(def, &c)),
@@ -1168,7 +1174,7 @@ pub(super) fn describe_card(
             }
             CardText {
                 spell: o.def.spell,
-                name: spell_name(spells, o.def.spell, o.def.key),
+                name: ability_name(spells, o.def),
                 tag: format!("Rank {} » {next}", o.level),
                 tag_color: Color::WHITE,
                 desc: lines.join("\n"),
@@ -1758,7 +1764,10 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
     let burst = def.duration <= 0.0;
     let mut s = match def.kind {
         Kind::Bolt | Kind::Strike | Kind::Melee => {
-            let toughest = matches!(def.key, "pyroblast" | "aimed_shot" | "exorcism" | "starfire");
+            let toughest = matches!(
+                def.key,
+                "pyroblast" | "aimed_shot" | "exorcism" | "starfire"
+            );
             let melee = def.kind == Kind::Melee;
             let who = match (toughest, melee, c.count) {
                 (true, _, 1) => "the toughest enemy in range".to_string(),
@@ -1768,16 +1777,29 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
                 (false, false, 1) => "the nearest enemy".into(),
                 (false, false, n) => format!("the {n} nearest enemies"),
             };
-            let mut s = format!("{} {who} for {d} damage", if melee { "Strikes" } else { "Hits" });
+            let mut s = format!(
+                "{} {who} for {d} damage",
+                if melee { "Strikes" } else { "Hits" }
+            );
             if c.radius > 0.0 && !melee {
                 s += &format!(", and everything within {} yd of the hit", num(c.radius));
             }
             s
         }
-        Kind::Nova => format!("Deals {d} damage to every enemy within {} yd of you", num(c.radius)),
-        Kind::Cone => format!("Deals {d} damage to every enemy in a {} yd cone toward the closest", num(c.radius)),
+        Kind::Nova => format!(
+            "Deals {d} damage to every enemy within {} yd of you",
+            num(c.radius)
+        ),
+        Kind::Cone => format!(
+            "Deals {d} damage to every enemy in a {} yd cone toward the closest",
+            num(c.radius)
+        ),
         Kind::Ground | Kind::GroundSelf => {
-            let at = if def.kind == Kind::GroundSelf { "around you" } else { "on the thickest pack" };
+            let at = if def.kind == Kind::GroundSelf {
+                "around you"
+            } else {
+                "on the thickest pack"
+            };
             if burst {
                 format!("Strikes a {} yd area {at} for {d} damage", num(c.radius))
             } else {
@@ -1807,10 +1829,17 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
         Kind::Orbit => format!(
             "Every {} sec, zaps {} within {} yd of you for {d} damage",
             num(c.cooldown),
-            if c.count == 1 { "an enemy".to_string() } else { format!("{} enemies", c.count) },
+            if c.count == 1 {
+                "an enemy".to_string()
+            } else {
+                format!("{} enemies", c.count)
+            },
             num(c.radius)
         ),
-        Kind::Shield => format!("Absorbs the next {d} damage you take within {} sec", num(c.duration)),
+        Kind::Shield => format!(
+            "Absorbs the next {d} damage you take within {} sec",
+            num(c.duration)
+        ),
         Kind::Immune => format!(
             "When an enemy closes in, makes you immune to all damage for {} sec",
             num(c.duration)
@@ -1819,7 +1848,10 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
             "When enemies close in, deals {d} damage to every attacker for {} sec",
             num(c.duration)
         ),
-        Kind::Heal => format!("Below 85% health, heals you for {d} over {} sec", num(c.duration)),
+        Kind::Heal => format!(
+            "Below 85% health, heals you for {d} over {} sec",
+            num(c.duration)
+        ),
         Kind::Totem if def.key == "magma_totem" => format!(
             "Drops a totem for {} sec that burns every enemy within {} yd for {d} damage every 2 sec",
             num(c.duration),
@@ -1891,11 +1923,9 @@ fn ability_tip(
 ) -> Vec<TipLine> {
     let def = o.def;
     let now = cast_at(def, o.level, stats);
-    let mut lines = vec![
-        TipLine::new(spell_name(spells, def.spell, def.key), Color::WHITE)
-            .header()
-            .right(format!("Rank {}", o.level), TIP_GREY),
-    ];
+    let mut lines = vec![TipLine::new(ability_name(spells, def), Color::WHITE)
+        .header()
+        .right(format!("Rank {}", o.level), TIP_GREY)];
     let range = match def.kind {
         Kind::Melee => Some("Melee Range".to_string()),
         Kind::Bolt | Kind::Strike | Kind::Chain | Kind::Dot | Kind::Ground | Kind::Totem => {
@@ -2139,7 +2169,15 @@ pub(super) fn icon_tooltip(
             .map(|&(p, level)| passive_tip(p, level, &stats)),
         TipFor::Mobility => run.mobility().map(|m| {
             vec![
-                TipLine::new(spell_name(spells.as_deref(), m.spell, m.name), Color::WHITE).header(),
+                TipLine::new(
+                    if run.class.id == 6 {
+                        m.name.to_owned()
+                    } else {
+                        spell_name(spells.as_deref(), m.spell, m.name)
+                    },
+                    Color::WHITE,
+                )
+                .header(),
                 TipLine::new("Press F", Color::WHITE)
                     .right(format!("{} sec cooldown", num(m.cooldown)), Color::WHITE),
                 TipLine::new(m.desc, GOLD),
@@ -2228,5 +2266,68 @@ pub(super) fn show_panels(
     }
     for root in &mut roots.p4() {
         set(root, p == Phase::GameOver);
+    }
+}
+
+#[cfg(test)]
+mod dk_tests {
+    use super::*;
+
+    #[test]
+    fn dk_cards_keep_their_names_on_unlock_and_upgrade() {
+        let dk = data::CLASSES.iter().find(|c| c.id == 6).unwrap();
+        let mut run = Run {
+            class: dk,
+            ..Default::default()
+        };
+        for key in dk.pool {
+            let def = data::ability(key);
+            let unlock = describe_card(Choice::NewAbility(def), &run, None);
+            assert_eq!(unlock.name, def.name.unwrap());
+            assert!(!unlock.desc.is_empty());
+            run.abilities = vec![Owned {
+                def,
+                level: 1,
+                cd: 0.0,
+            }];
+            let upgrade = describe_card(Choice::Upgrade(0), &run, None);
+            assert_eq!(upgrade.name, unlock.name);
+            assert_eq!(upgrade.ranks, Some((1, data::MAX_ABILITY_LEVEL)));
+            assert_eq!(
+                ability_tip(&run.abilities[0], &run.stats(), None)[0].left,
+                unlock.name
+            );
+        }
+    }
+
+    #[test]
+    fn dk_level_up_pool_offers_its_own_spells() {
+        let dk = data::CLASSES.iter().find(|c| c.id == 6).unwrap();
+        let mut run = Run {
+            class: dk,
+            ..Default::default()
+        };
+        run.abilities.push(Owned {
+            def: data::ability(dk.start),
+            level: 1,
+            cd: 0.0,
+        });
+        let mut rng = Rng(1);
+        let mut seen = std::collections::HashSet::new();
+        for _ in 0..128 {
+            for choice in choices_for(&run, &mut rng) {
+                if let Choice::NewAbility(def) = choice {
+                    assert!(dk.pool.contains(&def.key));
+                    assert_ne!(def.key, dk.start);
+                    seen.insert(def.key);
+                }
+            }
+        }
+        assert_eq!(seen.len(), dk.pool.len() - 1);
+        assert_eq!(run.stats().max_hp, super::super::BASE_HP + 40.0);
+        run.level = super::super::mobility::LEARN_LEVEL - 1;
+        assert!(run.mobility().is_none());
+        run.level += 1;
+        assert_eq!(run.mobility().unwrap().name, "Death's Advance");
     }
 }

@@ -8,7 +8,7 @@
 use bevy::prelude::*;
 use bevy::ui_render::ui_material::MaterialNode;
 
-use super::hud::{looks_for, rgb, start_run, HudFont, MenuRoot};
+use super::hud::{looks_for, rgb, start_run, HudFont, MenuRoot, SpellIcon};
 use super::{data, Phase, Rng, Run, Selection};
 use crate::char_select::race_name;
 use crate::glue::art::{class_tc, race_tc, tc_rect, GlueArt, DIM, GOLD, NAME_EDGE};
@@ -29,7 +29,7 @@ const FRAME_FILL: Color = Color::srgba(0.09, 0.09, 0.09, 0.85);
 
 /// The tower ends under the class grid and Randomize, where the create screen's appearance dials
 /// would start: there is nothing to customise here.
-const TOWER_H: f32 = 590.0;
+const TOWER_H: f32 = 642.0;
 
 /// The zone rows: the character-select row, compacted so every zone fits the 642-tall frame.
 const ROW_TOP: f32 = 44.0;
@@ -363,7 +363,8 @@ fn tower(ui: &mut ChildSpawnerCommands, art: &GlueArt, f: &Handle<Font>) {
                         grid,
                         f,
                         MenuAction::Class(i),
-                        None::<()>,
+                        // Classic's class atlas has no DK cell; use Death Coil's spell icon.
+                        (class.id == 6).then_some(SpellIcon(data::ability(class.start).spell)),
                         face,
                         None::<()>,
                         class.name,
