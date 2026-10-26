@@ -74,4 +74,5 @@ jobs:
       - name: Format Survivors changes
         run: rustfmt --edition 2021 --check --config skip_children=true crates/benilla-app/src/survivors/{data,hud,menu,mobility,mod}.rs
       - name: Survivors class and level-up card regressions
-        run: cargo test -p benilla-app --lib survivors:: --no-default-features
+        run: |
+          cargo test -p benilla-app --lib survivors:: --no-default-features
