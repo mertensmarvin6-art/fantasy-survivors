@@ -107,6 +107,7 @@ fn spell_tier(def: &data::AbilityDef, run: &Run) -> Rarity {
 /// Epic, a new spell by its power among the class's ([`spell_tier`]), a plain rank Uncommon.
 pub(super) fn rarity(choice: Choice, run: &Run) -> Rarity {
     match choice {
+        Choice::ElementalStorm => Rarity::Legendary,
         Choice::NewAbility(def) => spell_tier(def, run),
         Choice::Upgrade(k) => {
             let o = &run.abilities[k];

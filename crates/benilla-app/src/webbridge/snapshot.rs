@@ -36,6 +36,7 @@ mod nearby;
 /// is sixteen, and the outbound system has its own parameters besides). Every resource is
 /// `Option` for the same reason the unit feed's are — a UI-only harness runs without the net
 /// stack, and a missing resource must read as "nothing there", not a validation panic.
+#[allow(clippy::type_complexity)] // Bevy SystemParam queries require explicit component tuples.
 #[derive(bevy::ecs::system::SystemParam)]
 pub(crate) struct BridgeReadout<'w, 's> {
     state: Res<'w, State<ClientState>>,
@@ -185,6 +186,7 @@ impl BridgeReadout<'_, '_> {
             cfg.radius * cfg.radius,
             cfg.max_units,
         );
+        #[allow(clippy::type_complexity)]
         let payload = |(d2, (guid, net, transform, store, motion)): (
             f32,
             (
