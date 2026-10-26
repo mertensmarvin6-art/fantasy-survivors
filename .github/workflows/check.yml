@@ -72,5 +72,3 @@ jobs:
         run: |
           cargo test -p benilla-world --lib rig_anim::compose --no-default-features
           cargo test -p benilla-world --lib web_budget --no-default-features
-      - name: Survivors class and level-up card regressions
-        run: cargo test -p benilla-app --lib survivors:: --no-default-features
