@@ -142,6 +142,7 @@ fn strip_prefix_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)] // Preserve existing helper placement pending upstream cleanup.
 mod tests {
     use super::*;
 
