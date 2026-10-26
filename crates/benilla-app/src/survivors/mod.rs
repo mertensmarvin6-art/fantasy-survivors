@@ -322,7 +322,7 @@ impl Run {
         };
         // Tanky classes start tougher, cloth starts quicker.
         match self.class.id {
-            1 | 2 => s.max_hp += 40.0,
+            1 | 2 | 6 => s.max_hp += 40.0,
             7 | 11 | 3 | 4 => s.max_hp += 15.0,
             _ => s.speed += 0.5,
         }
